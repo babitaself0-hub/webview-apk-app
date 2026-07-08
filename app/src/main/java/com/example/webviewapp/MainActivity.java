@@ -8,9 +8,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Change this to your website's URL
-    private static final String TARGET_URL = "https://example.com";
-
     private WebView webView;
 
     @Override
@@ -23,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         webView.setWebViewClient(new WebViewClient());
-        webView.loadUrl(TARGET_URL);
+        webView.loadUrl(BuildConfig.TARGET_URL);
     }
 
     @Override

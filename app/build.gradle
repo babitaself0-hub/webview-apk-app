@@ -12,6 +12,16 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        def siteUrl = System.getenv("SITE_URL") ?: "https://example.com"
+        def appDisplayName = System.getenv("APP_NAME") ?: "My Web App"
+
+        buildConfigField "String", "TARGET_URL", "\"${siteUrl}\""
+        resValue "string", "app_name", appDisplayName
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {

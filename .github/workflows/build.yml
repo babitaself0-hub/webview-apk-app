@@ -4,6 +4,15 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'Website URL to wrap'
+        required: true
+        default: 'https://example.com'
+      app_name:
+        description: 'App display name'
+        required: true
+        default: 'My Web App'
 
 jobs:
   build:
@@ -26,6 +35,9 @@ jobs:
           gradle-version: '8.9'
 
       - name: Build debug APK
+        env:
+          SITE_URL: ${{ github.event.inputs.site_url }}
+          APP_NAME: ${{ github.event.inputs.app_name }}
         run: gradle assembleDebug
 
       - name: Upload APK
