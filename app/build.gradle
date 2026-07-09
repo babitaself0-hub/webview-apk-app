@@ -7,7 +7,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.webviewapp"
+        applicationId (System.getenv("PACKAGE_NAME") ?: "com.example.webviewapp")
         minSdk 24
         targetSdk 34
         versionCode 1

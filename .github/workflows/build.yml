@@ -13,6 +13,18 @@ on:
         description: 'App display name'
         required: true
         default: 'My Web App'
+      package_name:
+        description: 'Package name (e.g. com.yourname.appname)'
+        required: true
+        default: 'com.example.webviewapp'
+      icon_url:
+        description: 'Direct image URL for app icon (optional)'
+        required: false
+        default: ''
+      permissions:
+        description: 'Comma-separated: camera, microphone, location'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -34,10 +46,49 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Generate app icon
+        shell: bash
+        env:
+          ICON_URL: ${{ github.event.inputs.icon_url }}
+          APP_NAME: ${{ github.event.inputs.app_name }}
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y imagemagick
+          mkdir -p app/src/main/res/mipmap
+          if [ -n "$ICON_URL" ] && curl -sL --fail "$ICON_URL" -o /tmp/icon_raw.png && convert /tmp/icon_raw.png -resize 192x192^ -gravity center -extent 192x192 app/src/main/res/mipmap/ic_launcher.png; then
+            echo "Using custom icon"
+          else
+            LETTER=$(echo "${APP_NAME:0:1}" | tr '[:lower:]' '[:upper:]')
+            convert -size 192x192 xc:'#4A90D9' -gravity center -pointsize 96 -fill white -annotate 0 "$LETTER" app/src/main/res/mipmap/ic_launcher.png
+            echo "Using generated fallback icon"
+          fi
+
+      - name: Add requested permissions
+        shell: bash
+        env:
+          PERMISSIONS: ${{ github.event.inputs.permissions }}
+        run: |
+          PERMS=""
+          case "$PERMISSIONS" in
+            *camera*) PERMS="$PERMS<uses-permission android:name=\"android.permission.CAMERA\" />\n" ;;
+          esac
+          case "$PERMISSIONS" in
+            *microphone*) PERMS="$PERMS<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n" ;;
+          esac
+          case "$PERMISSIONS" in
+            *location*) PERMS="$PERMS<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\n<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\n" ;;
+          esac
+          if [ -n "$PERMS" ]; then
+            printf '%b' "$PERMS" > /tmp/perms.xml
+            awk '/<application/{while((getline line < "/tmp/perms.xml")>0) print line}1' app/src/main/AndroidManifest.xml > /tmp/manifest.xml
+            mv /tmp/manifest.xml app/src/main/AndroidManifest.xml
+          fi
+
       - name: Build debug APK
         env:
           SITE_URL: ${{ github.event.inputs.site_url }}
           APP_NAME: ${{ github.event.inputs.app_name }}
+          PACKAGE_NAME: ${{ github.event.inputs.package_name }}
         run: gradle assembleDebug
 
       - name: Upload APK
